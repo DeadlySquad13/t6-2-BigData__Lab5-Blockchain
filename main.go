@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type Shipment struct {
+	Id     string
+	From   string
+	To     string
+	Status string
+}
+
 type Block struct {
 	Index        uint64 `json:"index"`
 	Timestamp    int64  `json:"timestamp"`
@@ -70,6 +77,28 @@ func (bc *Blockchain) AddBlock(data, validator string) error {
 	blk.Hash = blk.ComputeHash()
 	bc.Chain = append(bc.Chain, blk)
 	return nil
+
+}
+
+func (bc *Blockchain) AddShipment(shipment Shipment, validator string) error {
+	shipmentJson, err := json.Marshal(shipment)
+
+	if err != nil {
+		return err
+	}
+
+	return bc.AddBlock(string(shipmentJson), validator)
+}
+
+func (bc *Blockchain) AddShipments(shipments []Shipment, validator string) error {
+	for _, shipment := range shipments {
+		err := bc.AddShipment(shipment, validator)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (bc *Blockchain) IsValid() bool {
@@ -86,19 +115,47 @@ func (bc *Blockchain) IsValid() bool {
 }
 
 func main() {
+	shipments_company1 := []Shipment{
+		{"S1", "Warehouse A", "Client X", "shipped"},
+		{"S2", "Warehouse B", "Client Y", "in_transit"},
+		{"S3", "Warehouse C", "Client Z", "delivered"},
+		{"S4", "Warehouse A", "Client W", "in_transit"},
+	}
+
+	shipments_company2 := []Shipment{
+		{"S5", "Warehouse D", "Client W", "in_transit"},
+		{"S6", "Warehouse E", "Client X", "delivered"},
+	}
+
+	shipments_company3 := []Shipment{
+		{"S7", "Warehouse A", "Client X", "shipped"},
+		{"S8", "Warehouse A", "Client Y", "in_transit"},
+		{"S9", "Warehouse A", "Client Z", "in_transit"},
+	}
+
 	bc := NewBlockchain()
 	fmt.Println("Genesis:", bc.Chain[0])
 
 	// Успешная попытка.
-	err := bc.AddBlock(`{"id":"S1","status":"shipped"}`,
-		"validator1_pubkey")
+	err := bc.AddShipments(shipments_company1,
+		AuthorizedValidators[0])
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+
+	// Успешная попытка.
+	err = bc.AddShipments(shipments_company2,
+		AuthorizedValidators[1])
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
 
 	// Неуспешная попытка.
-	err = bc.AddBlock(`{"id":"S2","status":"pending"}`, "bad_validator")
-	fmt.Println("AddBlock with bad_validator:", err)
+	err = bc.AddShipments(shipments_company3,
+		"bad_validator")
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
 
 	// Вывод всей цепочки.
 	out, _ := json.MarshalIndent(bc.Chain, "", " ")
