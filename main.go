@@ -101,6 +101,28 @@ func (bc *Blockchain) AddShipments(shipments []Shipment, validator string) error
 	return nil
 }
 
+func (bc *Blockchain) FindByStatus(status string) ([]Block, error) {
+	filteredBlocks := []Block{}
+
+	for _, block := range bc.Chain {
+		if block.ShipmentData == "genesis" {
+			continue
+		}
+
+		var shipment Shipment
+
+		if err := json.Unmarshal([]byte(block.ShipmentData), &shipment); err != nil {
+			return nil, err
+		}
+
+		if shipment.Status == status {
+			filteredBlocks = append(filteredBlocks, block)
+		}
+	}
+
+	return filteredBlocks, nil
+}
+
 func (bc *Blockchain) IsValid() bool {
 	for i := 1; i < len(bc.Chain); i++ {
 		curr, prev := bc.Chain[i], bc.Chain[i-1]
@@ -140,26 +162,33 @@ func main() {
 	err := bc.AddShipments(shipments_company1,
 		AuthorizedValidators[0])
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("AddShipments Error:", err)
 	}
 
 	// Успешная попытка.
 	err = bc.AddShipments(shipments_company2,
 		AuthorizedValidators[1])
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("AddShipments Error:", err)
 	}
 
 	// Неуспешная попытка.
 	err = bc.AddShipments(shipments_company3,
 		"bad_validator")
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("AddShipments Error:", err)
 	}
 
 	// Вывод всей цепочки.
 	out, _ := json.MarshalIndent(bc.Chain, "", " ")
 	fmt.Println(string(out))
+
+	in_transit, err := bc.FindByStatus("in_transit")
+	if err != nil {
+		fmt.Println("FindByStatus Error:", err)
+	}
+	in_transit_out, _ := json.MarshalIndent(in_transit, "", " ")
+	fmt.Println("Filtered by in_transit status:", string(in_transit_out))
 
 	// Проверка валидности.
 	fmt.Println("Chain valid?", bc.IsValid())
