@@ -1,5 +1,7 @@
 ### Nix ###
 result
+# In our case it's generated from nix.
+.pre-commit-config.yaml
 
 # Created by https://www.toptal.com/developers/gitignore/api/go,direnv
 # Edit at https://www.toptal.com/developers/gitignore?templates=go,direnv

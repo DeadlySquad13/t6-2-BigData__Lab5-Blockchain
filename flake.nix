@@ -8,6 +8,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
+    pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
   outputs = {
@@ -15,6 +16,7 @@
     nixpkgs,
     flake-utils,
     gomod2nix,
+    pre-commit-hooks,
   }: (
     flake-utils.lib.eachDefaultSystem
     (system: let
@@ -29,6 +31,7 @@
       };
       devShells.default = callPackage ./shell.nix {
         inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
+        inherit pre-commit-hooks;
       };
     })
   );
